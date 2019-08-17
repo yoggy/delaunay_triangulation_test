@@ -102,16 +102,31 @@ class Triangle {
 
   Triangle(DelaunayTriangulation d, int vi0, int vi1, int vi2) {
     this.d = d;
-    vi[0] = vi0;
-    vi[1] = vi1;
-    vi[2] = vi2;
+    setVIs(vi0, vi1, vi2);
   }
 
   Triangle(DelaunayTriangulation d, PVector v0, PVector v1, PVector v2) {
     this.d = d;
-    vi[0] = d.addV(v0);
-    vi[1] = d.addV(v1);
-    vi[2] = d.addV(v2);
+    
+    int vi0 = d.addV(v0);
+    int vi1 = d.addV(v1);
+    int vi2 = d.addV(v2);
+
+    setVIs(vi0, vi1, vi2);
+  }
+
+  void setVIs(int vi0, int vi1, int vi2)
+  {
+    if (isClockwise(vi0, vi1, vi2)) {
+      vi[0] = vi0;
+      vi[1] = vi1;
+      vi[2] = vi2;
+    }
+    else {
+      vi[0] = vi2;
+      vi[1] = vi1;
+      vi[2] = vi0;
+    }
   }
 
   PVector getV(int idx) {
@@ -129,6 +144,18 @@ class Triangle {
   PVector v2() {
     return getV(vi[2]);
   }
+
+  boolean isClockwise(int vi0, int vi1, int vi2) {
+    PVector v0 = getV(vi0);
+    PVector v1 = getV(vi1);
+    PVector v2 = getV(vi2);
+    
+    PVector p0 = new PVector(v1.x - v0.x, v1.y - v0.y);
+    PVector p1 = new PVector(v2.x - v0.x, v2.y - v0.y);
+
+    if (p0.cross(p1).z > 0) return true;
+    return false;
+}
 
   boolean isInner(PVector p) {
     PVector p0 = new PVector(v0().x - p.x, v0().y - p.y);
