@@ -1,4 +1,4 @@
-import java.util.*;
+import java.util.*; //<>//
 
 class Rectangle {
   float x;
@@ -48,8 +48,9 @@ class Rectangle {
 class Circle {
   DelaunayTriangulation d;
 
-  PVector center;
-  float r;
+  double center_x;
+  double center_y;
+  double r;
 
   Circle(DelaunayTriangulation d, int vi0, int vi1, int vi2) {
     this.d = d;
@@ -58,25 +59,29 @@ class Circle {
     PVector v1 = d.getV(vi1);
     PVector v2 = d.getV(vi2);
 
-    float x1 = v0.x;  
-    float y1 = v0.y;  
-    float x2 = v1.x;  
-    float y2 = v1.y;  
-    float x3 = v2.x;  
-    float y3 = v2.y;  
-    float x1_2 = x1 * x1;
-    float y1_2 = y1 * y1;
-    float x2_2 = x2 * x2;
-    float y2_2 = y2 * y2;
-    float x3_2 = x3 * x3;
-    float y3_2 = y3 * y3;
+    double x1 = v0.x;  
+    double y1 = v0.y;  
+    double x2 = v1.x;  
+    double y2 = v1.y;  
+    double x3 = v2.x;  
+    double y3 = v2.y;  
+    double x1_2 = x1 * x1;
+    double y1_2 = y1 * y1;
+    double x2_2 = x2 * x2;
+    double y2_2 = y2 * y2;
+    double x3_2 = x3 * x3;
+    double y3_2 = y3 * y3;
 
-    float c = 2.0f * ((x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1));  
-    float x = ((y3 - y1) * (x2_2 - x1_2 + y2_2 - y1_2) + (y1 - y2) * (x3_2 - x1_2 + y3_2 - y1_2)) / c;  
-    float y = ((x1 - x3) * (x2_2 - x1_2 + y2_2 - y1_2) + (x2 - x1) * (x3_2 - x1_2 + y3_2 - y1_2)) / c;  
+    double c = 2.0f * ((x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1));  
+    double x = ((y3 - y1) * (x2_2 - x1_2 + y2_2 - y1_2) + (y1 - y2) * (x3_2 - x1_2 + y3_2 - y1_2)) / c;  
+    double y = ((x1 - x3) * (x2_2 - x1_2 + y2_2 - y1_2) + (x2 - x1) * (x3_2 - x1_2 + y3_2 - y1_2)) / c;  
 
-    this.center = new PVector(x, y);    
-    this.r = PVector.dist(center, v0);
+    this.center_x = x;
+    this.center_y = y;
+    
+    double dx = v0.x - center_x;
+    double dy = v0.y - center_y;
+    this.r = Math.sqrt(dx*dx + dy*dy);
   }
 
   boolean isInner(int vi) {
@@ -84,14 +89,17 @@ class Circle {
   }
 
   boolean isInner(PVector v) {
-    float d = PVector.dist(v, center);
-    if (d < r) return true; // 線上はfalse
+    double dx = v.x - center_x;
+    double dy = v.y - center_y;
+    
+    double d = Math.sqrt(dx*dx + dy*dy);
+    if (d <= r) return true;
     return false;
   }
 
   void draw() {
     ellipseMode(CENTER);
-    ellipse(center.x, center.y, 2 * r, 2 * r);
+    ellipse((float)center_x, (float)center_y, 2 * (float)r, 2 * (float)r);
   }
 }
 
@@ -107,7 +115,7 @@ class Triangle {
 
   Triangle(DelaunayTriangulation d, PVector v0, PVector v1, PVector v2) {
     this.d = d;
-    
+
     int vi0 = d.addV(v0);
     int vi1 = d.addV(v1);
     int vi2 = d.addV(v2);
@@ -118,14 +126,33 @@ class Triangle {
   void setVIs(int vi0, int vi1, int vi2)
   {
     if (isClockwise(vi0, vi1, vi2)) {
-      vi[0] = vi0;
-      vi[1] = vi1;
-      vi[2] = vi2;
-    }
-    else {
-      vi[0] = vi2;
-      vi[1] = vi1;
-      vi[2] = vi0;
+      if (vi0 < vi1 && vi0 < vi2) {
+        vi[0] = vi0;
+        vi[1] = vi1;
+        vi[2] = vi2;
+      } else if (vi1 < vi0 && vi1 < vi2) {
+        vi[0] = vi1;
+        vi[1] = vi2;
+        vi[2] = vi0;
+      } else {
+        vi[0] = vi2;
+        vi[1] = vi0;
+        vi[2] = vi1;
+      }
+    } else {
+      if (vi0 < vi1 && vi0 < vi2) {
+        vi[0] = vi0;
+        vi[1] = vi2;
+        vi[2] = vi1;
+      } else if (vi1 < vi0 && vi1 < vi2) {
+        vi[0] = vi1;
+        vi[1] = vi0;
+        vi[2] = vi2;
+      } else {
+        vi[0] = vi2;
+        vi[1] = vi1;
+        vi[2] = vi0;
+      }
     }
   }
 
@@ -149,13 +176,13 @@ class Triangle {
     PVector v0 = getV(vi0);
     PVector v1 = getV(vi1);
     PVector v2 = getV(vi2);
-    
+
     PVector p0 = new PVector(v1.x - v0.x, v1.y - v0.y);
     PVector p1 = new PVector(v2.x - v0.x, v2.y - v0.y);
 
     if (p0.cross(p1).z > 0) return true;
     return false;
-}
+  }
 
   boolean isInner(PVector p) {
     PVector p0 = new PVector(v0().x - p.x, v0().y - p.y);
@@ -201,6 +228,8 @@ class Triangle {
         return vi[0];
       }
     }
+    println("getVI_exclude() : reached dead code ...");
+    System.exit(1);
     return -1;
   }
 
@@ -209,16 +238,14 @@ class Triangle {
     line(v1().x, v1().y, v2().x, v2().y);
     line(v2().x, v2().y, v0().x, v0().y);
   }
-
+ //<>//
   boolean equals(Triangle t) {
     if (t.vi[0] == this.vi[0] && t.vi[1] == this.vi[1] && t.vi[2] == this.vi[2]) return true;
-    if (t.vi[0] == this.vi[1] && t.vi[1] == this.vi[2] && t.vi[2] == this.vi[0]) return true;
-    if (t.vi[0] == this.vi[2] && t.vi[1] == this.vi[0] && t.vi[2] == this.vi[1]) return true;
     return false;
   }
 
   String toString() {
-    return "tr:{0:" + vi[0] + ", 1:" + vi[1] + ", 2:" + vi[0] + "}";
+    return "tr:{" + vi[0] + ", " + vi[1] + ", " + vi[2] + "}";
   }
 }
 
@@ -238,7 +265,13 @@ class DelaunayTriangulation {
 
   LinkedList<TargetEdge> edge_queue = new LinkedList<TargetEdge>();
 
+  boolean is_verbose = false;
+
   void DelaunayTriangulation() {
+  }
+
+  void verbose(boolean flag) {
+    this.is_verbose = flag;
   }
 
   void clear() {
@@ -253,9 +286,14 @@ class DelaunayTriangulation {
 
     initialize(src);
     for (int i = 0; i < src.length; ++i) {
-      //println("progress=" + i + "/" + src.length);
+
+      if (is_verbose) {
+        println("progress=" + i + "/" + src.length);
+      }
+
       PVector v = src[i];
-      appendPoint(v);
+      if (appendPoint(v) == false) break;
+
     }
     cleanup();
 
@@ -312,17 +350,18 @@ class DelaunayTriangulation {
     addTargetEdge(vi0, vi1);
     addTargetEdge(vi1, vi2);
     addTargetEdge(vi2, vi0);
+    addTargetEdge(vi2, vi0);
 
     while (edge_queue.size() > 0) {
       TargetEdge e = edge_queue.pop();
-      meshOptimize(e.vi0, e.vi1);
+      if (meshOptimize(e.vi0, e.vi1) == false) return false;
     }
 
     return true;
   }
 
   void cleanup() {
-    // TODO: trianglesからvi=0,1,2を含む含む三角形を削除する
+    // trianglesからvi=0,1,2を含む含む三角形を削除する
     Iterator<Triangle> it = triangles.iterator();
     while (it.hasNext()) {
       Triangle t = it.next();
@@ -372,18 +411,26 @@ class DelaunayTriangulation {
     PVector [] v = new PVector[3];
 
     v[0] = new PVector(c.x, c.y - 2 * r);
-    v[1] = new PVector(c.x + sqrt(3.0) * r, c.y + r);
-    v[2] = new PVector(c.x - sqrt(3.0) * r, c.y + r);
+    v[1] = new PVector(c.x - sqrt(3.0) * r, c.y + r);
+    v[2] = new PVector(c.x + sqrt(3.0) * r, c.y + r);
 
     return v;
   }
 
-  void meshOptimize(int vi0, int vi1) {
+  boolean meshOptimize(int vi0, int vi1) {
     // 頂点を含む三角形を取り出す
     Triangle [] t = getT_by_VertexIndex(vi0, vi1);
 
     // 隣接する2つの三角形がなかった場合は処理しない 
-    if (t == null || t.length != 2) return; 
+    if (t == null || t.length != 2) return true;
+    if (t.length > 2) {
+      println("error!! invalid triangles number!!");
+      return false;
+    }
+    if (t[0].equals(t[1])) {
+      println("error!! dupulicated triangles!! t0=" + t[0].toString() + ", t1=" + t[0].toString());
+      return false;
+    }
 
     // flipping処理のメモ: 
     //   vi_a-vi0-vi1, vi_b-vi0-vi1の2つの三角形を想定
@@ -409,11 +456,14 @@ class DelaunayTriangulation {
       int vi_a = vi_o[i];
       int vi_b = vi_o[(i+1)%2];
 
+      //println("vi_a=" + vi_a + ", vi_b=" + vi_b + ", vi0=" + vi0 + ", vi1=" + vi1);
+
       // vi_a, vi0, vi1で構成される円の中にvi_bが含まれるかどうかをチェック
       Circle c = new Circle(this, vi_a, vi0, vi1);
 
       // もし含まれる場合は、flipping処理を行う
       if (c.isInner(vi_b)) {
+        //println("flip");        
         // 既存の三角形を消す
         removeT(t[0]);
         removeT(t[1]);
@@ -425,6 +475,11 @@ class DelaunayTriangulation {
         Triangle t1 = new Triangle(this, vi1, vi_a, vi_b);
         addT(t1);
 
+        if (t0.equals(t1)) {
+          println("error!! dupulicated triangles!! t0=" + t[0].toString() + ", t1=" + t[0].toString());
+          return false;
+        }
+
         // 入れ替えて生成された三角形のエッジをflipping調査対象に追加
         addTargetEdge(vi0, vi_a);
         addTargetEdge(vi0, vi_b);
@@ -434,10 +489,10 @@ class DelaunayTriangulation {
         break;
       }
     }
+    return true;
   }
 
   ////////////////////////////////////////////////////////////////////////////
-
   int addV(PVector v) {
     vertices.add(v);
     return vertices.size() - 1; // 追加したインデックスを返す
@@ -460,7 +515,6 @@ class DelaunayTriangulation {
       println("DelauneyTraiangulation.getT() : error : invalid idx=" + idx);
       return null;
     }
-
     return triangles.get(idx);
   }
 
@@ -485,6 +539,14 @@ class DelaunayTriangulation {
     }
   }
 
+  void dumpT() {
+    print("dumpT() : ");      
+    for (int i = 0; i < triangles.size(); ++i) {
+      print("" + getT(i) + ", ");
+    }
+    println();
+  }
+
   boolean isEqualPosition(PVector target) {
     for (PVector v : vertices) {
       if (v.x == target.x && v.y == target.y) return true;
@@ -493,7 +555,7 @@ class DelaunayTriangulation {
   }
 
   void addTargetEdge(int vi0, int vi1) {
-    edge_queue.add(new TargetEdge(vi0, vi1));
+    edge_queue.push(new TargetEdge(vi0, vi1));
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -518,7 +580,6 @@ class DelaunayTriangulation {
     }
 
     //Vector<Integer> inner_v = new Vector<Integer>();
-
     //stroke(#0000ff);
     //strokeWeight(1);
     //noFill();
@@ -539,6 +600,8 @@ class DelaunayTriangulation {
       PVector v = vertices.get(i);
       fill(#ff0000);
       ellipse(v.x, v.y, 3, 3);
+      //textSize(128);
+      //text("" + i, v.x, v.y - 10);
     }
   }
 }
